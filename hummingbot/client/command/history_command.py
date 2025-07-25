@@ -97,7 +97,7 @@ class HistoryCommand:
                                    market: str):
         if market in self.markets and self.markets[market].ready:
             return self.markets[market].get_all_balances()
-        elif "Paper" in market:
+        elif "Paper" in market or 'paper' in market:
             paper_balances = self.client_config_map.paper_trade.paper_trade_account_balance
             if paper_balances is None:
                 return {}

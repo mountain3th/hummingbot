@@ -830,6 +830,9 @@ class ClientConfigMap(BaseClientModel):
     )
     market_data_collection: MarketDataCollectionConfigMap = Field(default=MarketDataCollectionConfigMap())
     model_config = ConfigDict(title="client_config_map")
+    email_recipients: List[str] = Field(
+        default=[],
+        description="List of email addresses to send performance reports to")
 
     @field_validator("kill_switch_mode", mode="before")
     @classmethod

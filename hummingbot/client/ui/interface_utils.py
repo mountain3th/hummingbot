@@ -1,14 +1,20 @@
 import asyncio
+import itertools
+from datetime import datetime, time, timedelta
 from decimal import Decimal
 from typing import List, Optional, Set, Tuple
 
 import pandas as pd
 import psutil
 import tabulate
+from yarl import Query
 
 from hummingbot.client.config.config_data_types import ClientConfigEnum
 from hummingbot.client.performance import PerformanceMetrics
+from hummingbot.core.utils.mail_tool import create_email, send_email
+from hummingbot.model.executors import Executors
 from hummingbot.model.trade_fill import TradeFill
+from hummingbot.strategy_v2.models.executors import CloseType
 
 s_decimal_0 = Decimal("0")
 
@@ -94,6 +100,83 @@ async def start_trade_monitor(trade_monitor):
             raise
         except Exception:
             hb.logger().exception("start_trade_monitor failed.")
+
+
+async def performance_send(force=False):
+    from hummingbot.client.hummingbot_application import HummingbotApplication
+    hb = HummingbotApplication.main_application()
+
+    async def report():
+        markets = []
+        pnls = []
+        trades_count = []
+        now = datetime.now()
+        now = now.replace(hour=21, minute=0, second=0, microsecond=0)
+        start_time = (now - timedelta(days=1)).timestamp()
+        end_time = now.timestamp()
+
+        hb.logger().info(f"Generating performance report for {now.strftime('%Y-%m-%d')}...")
+        try:
+            if hb.strategy_task is not None and not hb.strategy_task.done():
+                if all(market.ready for market in hb.markets.values()):
+                    with hb.trade_fill_db.get_new_session() as session:
+                        filters = [Executors.close_timestamp >= start_time,
+                                   Executors.close_timestamp < end_time,
+                                   Executors.close_type == CloseType.COMPLETED.value]
+                        query: Query = (session
+                                        .query(Executors)
+                                        .filter(*filters)
+                                        .order_by(Executors.timestamp.desc()))
+
+                        results: List[Executors] = query.all() or []
+
+                        for key, group in itertools.groupby(results, key=lambda x: x.controller_id):
+                            group = list(group)
+                            markets.append(key)
+                            trades_count.append(len(group))
+                            pnls.append(sum(executor.net_pnl_quote for executor in group))
+
+                        df = pd.DataFrame({
+                            "Market": markets,
+                            "Trades": trades_count,
+                            "Total P&L": pnls,
+                        })
+                        summary = df.sum(numeric_only=True)
+                        summary['Market'] = '-'
+                        df = pd.concat([df, summary.to_frame().T])
+
+                        df.to_html("performance_report.html", index=True)
+                        df_str = format_df_for_printout(df, hb.client_config_map.tables_format)
+                        email_message = create_email(
+                            subject=f"Daily Performance Report - {now.strftime('%Y-%m-%d')}",
+                            recipients=hb.client_config_map.email_recipients,
+                            body=df_str,
+                            body_type="plain")
+                        send_email(message=email_message)
+                        hb.logger().info(f"Performance report for {now.strftime('%Y-%m-%d')} generated successfully.")
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            hb.logger().exception("performance send report failed.")
+
+    if not force:
+        while True:
+            now = datetime.now()
+            target_time = time(21, 0)  # 21:00
+            # If it's not 21:00 yet today, skip
+            if now.time() < target_time:
+                next_call_time = datetime.combine(now.date(), target_time) - now
+            elif (now - datetime.combine(now.date(), target_time)) > timedelta(hours=1):
+                next_call_time = now - datetime.combine(now.date(), target_time)
+            else:
+                await report()
+                next_call_time = timedelta(days=1)
+
+            hb.logger().info(f"Performance report generating will be run after {next_call_time.total_seconds()}s")
+            await asyncio.sleep(next_call_time.total_seconds())
+
+    else:
+        await report()
 
 
 def format_df_for_printout(
