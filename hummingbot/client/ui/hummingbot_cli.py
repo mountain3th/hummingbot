@@ -15,7 +15,11 @@ from hummingbot import init_logging
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.client.tab.data_types import CommandTab
-from hummingbot.client.ui.interface_utils import start_process_monitor, start_timer, start_trade_monitor
+from hummingbot.client.ui.interface_utils import (  # start_trade_monitor,
+    performance_send,
+    start_process_monitor,
+    start_timer,
+)
 from hummingbot.client.ui.layout import (
     create_input_field,
     create_live_field,
@@ -96,7 +100,8 @@ class HummingbotCLI(PubSub):
         loop = asyncio.get_event_loop()
         loop.create_task(start_timer(self.timer))
         loop.create_task(start_process_monitor(self.process_usage))
-        loop.create_task(start_trade_monitor(self.trade_monitor))
+        # loop.create_task(start_trade_monitor(self.trade_monitor))
+        loop.create_task(performance_send())
 
     def did_start_ui(self):
         self._stdout_redirect_context.enter_context(patch_stdout(log_field=self.log_field))
