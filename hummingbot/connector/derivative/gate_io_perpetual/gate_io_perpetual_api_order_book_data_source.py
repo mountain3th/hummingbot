@@ -47,6 +47,7 @@ class GateIoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         symbol_info: Dict[str, Any] = funding_info_response
         funding_info = FundingInfo(
             trading_pair=trading_pair,
+            funding_interval=funding_info_response["funding_interval"],
             index_price=Decimal(str(symbol_info["index_price"])),
             mark_price=Decimal(str(symbol_info["mark_price"])),
             next_funding_utc_timestamp=int(symbol_info["funding_next_apply"]),

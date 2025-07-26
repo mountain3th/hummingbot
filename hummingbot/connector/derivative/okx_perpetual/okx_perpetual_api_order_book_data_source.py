@@ -89,7 +89,8 @@ class OkxPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         if not bool(self._trading_rules):
             resp = await self._request_trading_rules_info()
             for rule in resp["data"]:
-                self._trading_rules[rule["instId"]] = float(rule["ctVal"])
+                if rule['ctVal']:
+                    self._trading_rules[rule["instId"]] = float(rule["ctVal"])
         return self._trading_rules
 
     async def _request_trading_rules_info(self) -> Dict[str, Any]:
@@ -125,6 +126,7 @@ class OkxPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             index_price=Decimal(str(index_price["idxPx"])),
             mark_price=Decimal(str(mark_price["markPx"])),
             next_funding_utc_timestamp=int(float(funding_data["nextFundingTime"]) * 1e-3),
+            funding_interval = (int(funding_data["nextFundingTime"]) - int(funding_data["fundingTime"])) / 1000,
             rate=Decimal(str(funding_data["fundingRate"])),
         )
         return funding_info

@@ -207,7 +207,8 @@ class PerpetualDerivativePyBase(ExchangePyBase, ABC):
         if self._funding_info_listener_task is not None:
             self._funding_info_listener_task.cancel()
             self._funding_info_listener_task = None
-        self._last_funding_fee_payment_ts.clear()
+        # note: do not clear here cuz it will be calculated again on the next funding payment
+        # self._last_funding_fee_payment_ts.clear()
         await super().stop_network()
 
     async def _create_order(

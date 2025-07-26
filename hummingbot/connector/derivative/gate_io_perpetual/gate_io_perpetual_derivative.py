@@ -21,7 +21,7 @@ from hummingbot.connector.perpetual_derivative_py_base import PerpetualDerivativ
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.clock import Clock
-from hummingbot.core.data_type.common import OrderType, PositionMode, PositionSide, TradeType
+from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, PositionSide, TradeType
 from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState, OrderUpdate, TradeUpdate
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
 from hummingbot.core.data_type.trade_fee import TokenAmount, TradeFeeBase
@@ -300,6 +300,11 @@ class GateIoPerpetualDerivative(PerpetualDerivativePyBase):
             "contract": symbol,
             "size": float(-size) if trade_type.name.lower() == 'sell' else float(size),
         }
+        if self.position_mode == PositionMode.HEDGE and kwargs.get("position_action") == PositionAction.CLOSE:
+            data.update({
+                "reduce_only": True,
+                "close": False
+            })
         if order_type.is_limit_type():
             data.update({
                 "price": f"{price:f}",
@@ -511,6 +516,7 @@ class GateIoPerpetualDerivative(PerpetualDerivativePyBase):
                  quote_currency: str,
                  order_type: OrderType,
                  order_side: TradeType,
+                 position_action: PositionAction,
                  amount: Decimal,
                  price: Decimal = s_decimal_NaN,
                  is_maker: Optional[bool] = None) -> TradeFeeBase:
@@ -804,7 +810,21 @@ class GateIoPerpetualDerivative(PerpetualDerivativePyBase):
         return success, msg
 
     async def _fetch_last_fee_payment(self, trading_pair: str) -> Tuple[int, Decimal, Decimal]:
-        pass
-
-    async def _update_funding_payment(self, trading_pair: str, fire_event_on_new: bool) -> bool:
-        return True
+        params = {
+            "contract": await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair),
+            "type": "fund",
+            "limit": 1
+        }
+        data = await self._api_get(
+            path_url=CONSTANTS.ACCOUNT_BOOK_PATH_URL,
+            params=params,
+            is_auth_required=True,
+        )
+        payment = Decimal("0")
+        if not data:
+            timestamp, funding_rate = 0, Decimal("-1")
+        else:
+            timestamp = int(data[0]["time"]) * 1e3
+            funding_rate: Decimal = Decimal(str(-1))
+            payment = Decimal(data[0]["change"])
+        return timestamp, funding_rate, payment
