@@ -14,12 +14,14 @@ class FundingInfo:
                  mark_price: Decimal,
                  next_funding_utc_timestamp: int,
                  rate: Decimal,
+                 funding_interval: Optional[int] = None
                  ):
         self._trading_pair = trading_pair
         self._index_price = index_price
         self._mark_price = mark_price
         self._next_funding_utc_timestamp = next_funding_utc_timestamp
         self._rate = rate
+        self._funding_interval = funding_interval
 
     @property
     def trading_pair(self) -> str:
@@ -48,6 +50,10 @@ class FundingInfo:
     @next_funding_utc_timestamp.setter
     def next_funding_utc_timestamp(self, next_funding_utc_timestamp):
         self._next_funding_utc_timestamp = next_funding_utc_timestamp
+
+    @property
+    def funding_interval(self) -> Optional[int]:
+        return self._funding_interval
 
     @property
     def rate(self) -> Decimal:
