@@ -18,6 +18,7 @@ MY_TRADES_PATH_URL = "futures/usdt/my_trades"
 MARK_PRICE_URL = "futures/usdt/contracts/{id}"
 NETWORK_CHECK_PATH_URL = "futures/usdt/contracts/BTC_USDT"
 FUNDING_RATE_TIME_PATH_URL = "futures/usdt/funding_rate"
+ACCOUNT_BOOK_PATH_URL = "futures/usdt/account_book"
 
 ORDER_CREATE_PATH_URL = "futures/usdt/orders"
 ORDER_DELETE_PATH_URL = "futures/usdt/orders/{id}"
@@ -98,5 +99,7 @@ RATE_LIMITS = [
     RateLimit(limit_id=ORDER_BOOK_PATH_URL, limit=300, time_interval=1,
               linked_limits=[LinkedLimitWeightPair(PUBLIC_URL_POINTS_LIMIT_ID)]),
     RateLimit(limit_id=MY_TRADES_PATH_URL, limit=400, time_interval=1,
+              linked_limits=[LinkedLimitWeightPair(PRIVATE_URL_POINTS_LIMIT_ID)]),
+    RateLimit(limit_id=ACCOUNT_BOOK_PATH_URL, limit=200, time_interval=10,
               linked_limits=[LinkedLimitWeightPair(PRIVATE_URL_POINTS_LIMIT_ID)]),
 ]

@@ -637,7 +637,9 @@ class OkxPerpetualDerivative(PerpetualDerivativePyBase):
 
     @staticmethod
     def get_position_amount(position_msg: Dict[str, Any]) -> Decimal:
-        if bool(position_msg["notionalUsd"]):
+        if bool(position_msg["availPos"]):
+            return Decimal(position_msg["availPos"])
+        elif bool(position_msg["notionalUsd"]):
             notional_usd = Decimal(position_msg["notionalUsd"])
             avg_px = Decimal(position_msg["avgPx"])
             amount = abs(notional_usd / avg_px) if notional_usd != s_decimal_0 else s_decimal_0
