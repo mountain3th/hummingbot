@@ -447,21 +447,21 @@ class StrategyV2Base(ScriptStrategyBase):
             lines.extend(controller.to_format_status())
 
             # Last 6 executors table
-            executors_list = self.get_executors_by_controller(controller_id)
-            if executors_list:
-                lines.append("\n  Recent Executors (Last 6):")
-                # Sort by timestamp and take last 6
-                recent_executors = sorted(executors_list, key=lambda x: x.timestamp, reverse=True)[:6]
-                executors_df = self.executors_info_to_df(recent_executors)
-                if not executors_df.empty:
-                    executors_df["age"] = self.current_timestamp - executors_df["timestamp"]
-                    executor_columns = ["type", "side", "status", "net_pnl_pct", "net_pnl_quote",
-                                        "filled_amount_quote", "is_trading", "close_type", "age"]
-                    available_columns = [col for col in executor_columns if col in executors_df.columns]
-                    lines.append(format_df_for_printout(executors_df[available_columns],
-                                                        table_format="psql", index=False))
-            else:
-                lines.append("  No executors found.")
+            # executors_list = self.get_executors_by_controller(controller_id)
+            # if executors_list:
+            #     lines.append("\n  Recent Executors (Last 6):")
+            #     # Sort by timestamp and take last 6
+            #     recent_executors = sorted(executors_list, key=lambda x: x.timestamp, reverse=True)[:6]
+            #     executors_df = self.executors_info_to_df(recent_executors)
+            #     if not executors_df.empty:
+            #         executors_df["age"] = self.current_timestamp - executors_df["timestamp"]
+            #         executor_columns = ["type", "side", "status", "net_pnl_pct", "net_pnl_quote",
+            #                             "filled_amount_quote", "is_trading", "close_type", "age"]
+            #         available_columns = [col for col in executor_columns if col in executors_df.columns]
+            #         lines.append(format_df_for_printout(executors_df[available_columns],
+            #                                             table_format="psql", index=False))
+            # else:
+            #     lines.append("  No executors found.")
 
             # Positions table
             positions = self.get_positions_by_controller(controller_id)
