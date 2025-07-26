@@ -221,6 +221,10 @@ class MarketDataProvider:
             api_keys=self.get_connector_config_map(connector_name),
             client_config_map=client_config_map,
         )
+        if connector_name.endswith("paper_trade"):
+            from hummingbot.connector.exchange.paper_trade import create_paper_trade_market
+            connector = create_paper_trade_market(conn_setting.parent_name, client_config_map, [])
+            return connector
         connector_class = get_connector_class(connector_name)
         connector = connector_class(**init_params)
         return connector
