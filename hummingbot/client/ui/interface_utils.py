@@ -116,7 +116,7 @@ async def performance_send(force=False):
 
         hb.logger().info(f"Generating performance report for {now.strftime('%Y-%m-%d')}...")
         try:
-            if hb.strategy_task is not None and not hb.strategy_task.done():
+            if (task := hb.trading_core.strategy_task) and not task.done():
                 if all(market.ready for market in hb.markets.values()):
                     with hb.trade_fill_db.get_new_session() as session:
                         filters = [Executors.close_timestamp >= start_time,
@@ -145,12 +145,14 @@ async def performance_send(force=False):
                         df = pd.concat([df, summary.to_frame().T])
 
                         df.to_html("performance_report.html", index=True)
-                        df_str = format_df_for_printout(df, hb.client_config_map.tables_format)
+                        # df_str = format_df_for_printout(df, hb.client_config_map.tables_format)
+                        with open("performance_report.html") as f:
+                            html = f.read()
                         email_message = create_email(
                             subject=f"Daily Performance Report - {now.strftime('%Y-%m-%d')}",
                             recipients=hb.client_config_map.email_recipients,
-                            body=df_str,
-                            body_type="plain")
+                            body=html,
+                            body_type="html")
                         send_email(message=email_message)
                         hb.logger().info(f"Performance report for {now.strftime('%Y-%m-%d')} generated successfully.")
         except asyncio.CancelledError:

@@ -48,8 +48,8 @@ class AutoHedgeV2Strategy(StrategyV2Base):
         :param clock: Clock to use.
         :param timestamp: Current time.
         """
+        super().start(clock, timestamp)
         self._check_hedge_timestamp = timestamp
-        self.apply_initial_setting()
 
         self.hedge_market_pairs = {token: MarketTradingPairTuple(market=self.connectors[exchange_name], trading_pair=combine_to_hb_trading_pair(token, 'USDT'), base_asset=token, quote_asset='USDT')
                                    for token, exchange_name in self.config.hedge_markets.items()
