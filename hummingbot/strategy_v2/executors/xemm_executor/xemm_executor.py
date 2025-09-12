@@ -157,7 +157,12 @@ class XEMMExecutor(ExecutorBase):
     async def on_start(self):
         self.config.order_amount = self.adjust_order_amount(self.config.order_amount)
         self.remain_amount = self.config.order_amount
-        await super().on_start()
+        if self.config.order_amount > 0:
+            await super().on_start()
+        else:
+            self.close_type = CloseType.FAILED
+            self.logger().error("Order amount is too small to place an order.")
+            self.stop()
 
     async def control_task(self):
         if self.status == RunnableStatus.RUNNING:

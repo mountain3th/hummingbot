@@ -98,3 +98,6 @@ coverage.xml
 **/.claude/settings.local.json
 
 *.partial
+.continue/
+.stfolder/
+.stignore
