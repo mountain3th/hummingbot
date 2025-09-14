@@ -701,6 +701,9 @@ class GateIoPerpetualDerivative(PerpetualDerivativePyBase):
 
         for position in positions:
             ex_trading_pair = position.get("contract")
+            map = await self.trading_pair_symbol_map()
+            if ex_trading_pair not in map:
+                continue
             hb_trading_pair = await self.trading_pair_associated_to_exchange_symbol(ex_trading_pair)
 
             amount = Decimal(position.get("size"))
