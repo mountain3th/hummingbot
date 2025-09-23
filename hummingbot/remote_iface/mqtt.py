@@ -146,9 +146,9 @@ class MQTTCommands:
         response = StartCommandMessage.Response()
         timeout = 30
         try:
-            if self._hb_app.strategy_name is None and msg.script is None:
+            if self._hb_app.trading_core.strategy_name is None and msg.script is None:
                 raise Exception('Strategy check: Please import or create a strategy.')
-            if self._hb_app.strategy is not None:
+            if self._hb_app.trading_core.strategy is not None:
                 raise Exception('The bot is already running - please run "stop" first')
             if msg.async_backend:
                 self._hb_app.start(
@@ -231,8 +231,8 @@ class MQTTCommands:
             elif isinstance(self._hb_app.client_config_map,
                             ClientConfigAdapter):
                 client_config = self._hb_app.client_config_map.dict()
-            if isinstance(self._hb_app._strategy_config_map, dict):  # pragma: no cover
-                for key, value in self._hb_app._strategy_config_map.items():
+            if isinstance(self._hb_app.trading_core.strategy_config_map, dict):  # pragma: no cover
+                for key, value in self._hb_app.trading_core.strategy_config_map.items():
                     if isinstance(value, ConfigVar):
                         strategy_config[key] = value.value
                     else:
@@ -278,7 +278,7 @@ class MQTTCommands:
         response = StatusCommandMessage.Response()
         timeout = 30  # seconds
         try:
-            if self._hb_app.strategy is None:
+            if self._hb_app.trading_core.strategy is None:
                 response.status = MQTT_STATUS_CODE.ERROR
                 response.msg = 'No strategy is currently running!'
                 return response
@@ -802,7 +802,7 @@ class MQTTGateway(Node):
             # self._rpc_clients = []
 
             self.start(False)
-            if self._hb_app.strategy is not None:
+            if self._hb_app.trading_core.strategy is not None:
                 self.start_market_events_fw()
 
             await asyncio.sleep(self._INTERVAL_RESTART_SHORT)
