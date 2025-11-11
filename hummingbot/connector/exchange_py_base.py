@@ -88,6 +88,21 @@ class ExchangePyBase(ExchangeBase, ABC):
             cls._logger = logging.getLogger(HummingbotLogger.logger_name_for_class(cls))
         return cls._logger
 
+    async def reset_trading_pairs(self, trading_pairs: List[str]) -> bool:
+        self._trading_pairs = trading_pairs
+        self.logger().info('resetting trading pairs')
+        self._throttler = AsyncThrottler(
+            rate_limits=self.rate_limits_rules,
+            limits_share_percentage=self._throttler.limits_pct * 100)
+        self._web_assistants_factory: WebAssistantsFactory = self._create_web_assistants_factory()
+        self._orderbook_ds: OrderBookTrackerDataSource = self._create_order_book_data_source()
+        self._set_order_book_tracker(OrderBookTracker(
+            data_source=self._orderbook_ds,
+            trading_pairs=self.trading_pairs,
+            domain=self.domain))
+        self._user_stream_tracker = self._create_user_stream_tracker()
+        await self.start_network()
+
     @property
     @abstractmethod
     def name(self) -> str:

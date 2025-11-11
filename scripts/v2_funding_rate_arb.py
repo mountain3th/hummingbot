@@ -90,6 +90,11 @@ class FundingRateArbitrageConfig(StrategyV2ConfigBase):
             return set(v.split(","))
         return v
 
+    def __eq__(self, other):
+        if isinstance(other, FundingRateArbitrageConfig):
+            return self.tokens == other.tokens
+        return True
+
 
 class FundingRateArbitrage(StrategyV2Base):
     quote_markets_map = {

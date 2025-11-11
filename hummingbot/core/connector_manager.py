@@ -147,9 +147,11 @@ class ConnectorManager:
         existing_pairs = connector.trading_pairs
         all_pairs = list(set(existing_pairs + trading_pairs))
 
+        await connector.reset_trading_pairs(all_pairs)
+
         # Remove and recreate
-        self.remove_connector(connector_name)
-        self.create_connector(connector_name, all_pairs)
+        # self.remove_connector(connector_name)
+        # self.create_connector(connector_name, all_pairs)
 
         return True
 

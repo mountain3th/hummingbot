@@ -24,6 +24,7 @@ from hummingbot.core.clock import Clock, ClockMode
 from hummingbot.core.connector_manager import ConnectorManager
 from hummingbot.core.gateway.gateway_http_client import GatewayHttpClient
 from hummingbot.core.rate_oracle.rate_oracle import RateOracle
+from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.core.utils.kill_switch import KillSwitch
 from hummingbot.exceptions import InvalidScriptModule
 from hummingbot.logger import HummingbotLogger
@@ -498,6 +499,9 @@ class TradingCore:
             self._strategy_running = True
 
             self.logger().info(f"Strategy {strategy_name} started successfully")
+
+            # Schedule reload_strategy every 10 minutes
+            self.reload_strategy_task = safe_ensure_future(self.reload_strategy())
             return True
 
         except Exception as e:
@@ -615,6 +619,23 @@ class TradingCore:
         except Exception as e:
             self.logger().error(f"Failed to stop strategy: {e}")
             return False
+
+    async def reload_strategy(self) -> bool:
+        while True:
+            await asyncio.sleep(60 * 1)
+            try:
+                if not self._strategy_running:
+                    self.logger().warning("No strategy is currently running")
+                script_strategy_class, config = self.load_script_class(self.strategy_name)
+                if self.strategy.config != config:
+                    script_strategy_class.init_markets(config)
+                    for connector_name, trading_pairs in script_strategy_class.markets.items():
+                        await self.connector_manager.add_trading_pairs(connector_name, list(trading_pairs))
+                    self.strategy.config = config
+                    print('set new config', self.strategy.config)
+                self.logger().info("Strategy reloaded successfully")
+            except Exception as e:
+                self.logger().error(f"Failed to reload strategy: {e}")
 
     async def cancel_outstanding_orders(self) -> bool:
         """Cancel all outstanding orders."""
